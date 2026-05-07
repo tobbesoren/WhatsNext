@@ -7,9 +7,18 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 @Model
 class TaskItem {
+    
+    enum TaskDisplayState {
+            case active
+            case waiting
+            case completed
+            case deleted
+        }
+    
     var title: String
     var notes: String?
     var priority: Int
@@ -20,6 +29,69 @@ class TaskItem {
     var isDeleted: Bool
     var dateCompleted: Date?
     // var subTasks: SubTasks?
+    var displayState: TaskDisplayState {
+        if isDeleted {
+            return .deleted
+        }
+        
+        if isCompleted {
+            return .completed
+        }
+        
+        if let notBefore, notBefore > .now {
+            return .waiting
+        }
+        
+        return .active
+    }
+    
+    var sortScore: Int {
+        var score = priority * 100
+        
+        if let dueDate {
+            let daysLeft = Calendar.current.dateComponents([.day], from: .now, to: dueDate).day ?? 0
+            
+            if daysLeft <= 0 {
+                score += 1000
+            } else if daysLeft == 1 {
+                score += 500
+            } else if daysLeft <= 3 {
+                score += 250
+            } else if daysLeft <= 7 {
+                score += 100
+            }
+        }
+        
+        return score
+    }
+    
+    var urgencyColor: Color {
+        guard displayState == .active else {
+            return .secondary
+        }
+        
+        guard let dueDate else {
+            return .blue
+        }
+        
+        let hoursLeft = Calendar.current.dateComponents([.hour], from: .now, to: dueDate).hour ?? 0
+        
+        if hoursLeft < 0 {
+            return .red
+        }
+        
+        let priorityBoost = Double(priority - 1) / 4.0
+        
+        if hoursLeft <= 24 {
+            return priorityBoost > 0.5 ? .red : .orange
+        } else if hoursLeft <= 72 {
+            return priorityBoost > 0.5 ? .orange : .yellow
+        } else if hoursLeft <= 168 {
+            return priorityBoost > 0.5 ? .yellow : .green
+        } else {
+            return priorityBoost > 0.5 ? .green : .blue
+        }
+    }
     
     init(
         title: String,

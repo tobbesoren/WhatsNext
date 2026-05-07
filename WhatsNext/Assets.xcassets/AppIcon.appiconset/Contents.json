@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "WhatsNext_AppIcon_square_1024.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

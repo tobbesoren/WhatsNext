@@ -9,53 +9,135 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var tasks: [TaskItem]
+    
+    var activeTasks: [TaskItem] {
+        tasks
+            .filter { $0.displayState == .active }
+            .sorted {
+                if $0.sortScore != $1.sortScore {
+                    return $0.sortScore > $1.sortScore
+                }
+                
+                if $0.createdAt != $1.createdAt {
+                    return $0.createdAt < $1.createdAt
+                }
+                
+                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+            }
+    }
 
+    var waitingTasks: [TaskItem] {
+        tasks
+            .filter { $0.displayState == .waiting }
+            .sorted {
+                ($0.notBefore ?? .distantFuture) < ($1.notBefore ?? .distantFuture)
+            }
+    }
+
+    var completedTasks: [TaskItem] {
+        tasks
+            .filter { $0.displayState == .completed }
+            .sorted {
+                ($0.dateCompleted ?? .distantPast) > ($1.dateCompleted ?? .distantPast)
+            }
+    }
+
+    var deletedTasks: [TaskItem] {
+        tasks.filter { $0.displayState == .deleted }
+    }
+
+    @State private var newTaskTitle = ""
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        NavigationStack {
+            VStack {
+                HStack {
+                    TextField("New task", text: $newTaskTitle)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            addTask()
+                        }
+                    
+                    Button("Add") {
+                        addTask()
                     }
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                .padding()
+                
+                List {
+                    
+                    Section("Now") {
+                        ForEach(activeTasks) { task in
+                            TaskRowView(
+                                task: task,
+                                completeTask: completeTask,
+                                removeTask: removeTask
+                            )
+                        }
+                    }
+                    
+                    Section("Later") {
+                        ForEach(waitingTasks) { task in
+                            TaskRowView(
+                                task: task,
+                                completeTask: completeTask,
+                                removeTask: removeTask
+                            )
+                        }
+                    }
+                    
+                    Section("Done") {
+                        ForEach(completedTasks) { task in
+                            TaskRowView(
+                                task: task,
+                                completeTask: completeTask,
+                                removeTask: removeTask
+                            )
+                        }
                     }
                 }
             }
-        } detail: {
-            Text("Select an item")
+            .navigationTitle("WhatsNext")
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
+    
+    private func addTask() {
+        let trimmedTitle = newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !trimmedTitle.isEmpty else { return }
+        
+        let task = TaskItem(title: trimmedTitle)
+        modelContext.insert(task)
+        
+        newTaskTitle = ""
     }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+    
+    private func completeTask(_ task: TaskItem) {
+        task.isCompleted = true
+        task.dateCompleted = .now
+    }
+    
+    private func removeTask(_ task: TaskItem) {
+        task.isDeleted = true
     }
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    
+    let container = try! ModelContainer(
+        for: TaskItem.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    
+    let context = container.mainContext
+    
+    context.insert(TaskItem(title: "Buy milk"))
+    context.insert(TaskItem(title: "Call dentist", priority: 3))
+    context.insert(TaskItem(title: "Finish iOS app"))
+    
+    return ContentView()
+        .modelContainer(container)
 }
