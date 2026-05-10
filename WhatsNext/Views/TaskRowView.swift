@@ -10,13 +10,14 @@ struct TaskRowView: View {
     @Bindable var task: TaskItem
     let completeTask: (TaskItem) -> Void
     let removeTask: (TaskItem) -> Void
+    let currentDate: Date
     
     @State private var isExpanded = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                switch task.displayState {
+                switch task.displayState(at: currentDate) {
                 case .active:
                     Button {
                         completeTask(task)
@@ -44,12 +45,12 @@ struct TaskRowView: View {
                 }
                 
                 Text(task.title)
-                    .foregroundStyle(task.urgencyColor)
-                    .strikethrough(task.displayState == .completed)
+                    .foregroundStyle(task.urgencyColor(at: currentDate))
+                    .strikethrough(task.displayState(at: currentDate) == .completed)
                 
                 Spacer()
                 
-                if task.displayState == .active || isExpanded {
+                if task.displayState(at: currentDate) == .active || isExpanded {
                     Button {
                         isExpanded.toggle()
                     } label: {
