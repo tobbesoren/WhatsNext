@@ -16,7 +16,7 @@ class TaskItem {
             case active
             case waiting
             case completed
-            case deleted
+            case archived
         }
     
     var title: String
@@ -26,27 +26,11 @@ class TaskItem {
     var notBefore: Date?
     var dueDate: Date?
     var isCompleted: Bool
-    var isDeleted: Bool
+    var isArchived: Bool
     var dateCompleted: Date?
-    // var subTasks: SubTasks?
-//    var displayState: TaskDisplayState {
-//        if isDeleted {
-//            return .deleted
-//        }
-//        
-//        if isCompleted {
-//            return .completed
-//        }
-//        
-//        if let notBefore, notBefore > .now {
-//            return .waiting
-//        }
-//        
-//        return .active
-//    }
     
     func displayState(at date: Date) -> TaskDisplayState {
-        if isDeleted { return .deleted }
+        if isArchived { return .archived }
         if isCompleted { return .completed }
 
         if let notBefore, notBefore > date {
@@ -55,27 +39,6 @@ class TaskItem {
 
         return .active
     }
-    
-//    var sortScore: Int {
-//        var score = priority * 100
-//        
-//        if let dueDate {
-//            let daysLeft = Calendar.current.dateComponents([.day], from: .now, to: dueDate).day ?? 0
-//            
-//            if daysLeft <= 0 {
-//                score += 1000
-//            } else if daysLeft == 1 {
-//                score += 500
-//            } else if daysLeft <= 3 {
-//                score += 250
-//            } else if daysLeft <= 7 {
-//                score += 100
-//            }
-//        }
-//        
-//        return score
-//    }
-    
     
     func sortScore(at date: Date) -> Int {
         var score = priority * 100
@@ -96,34 +59,6 @@ class TaskItem {
 
         return score
     }
-    
-//    var urgencyColor: Color {
-//        guard displayState == .active else {
-//            return .secondary
-//        }
-//        
-//        guard let dueDate else {
-//            return .blue
-//        }
-//        
-//        let hoursLeft = Calendar.current.dateComponents([.hour], from: .now, to: dueDate).hour ?? 0
-//        
-//        if hoursLeft < 0 {
-//            return .red
-//        }
-//        
-//        let priorityBoost = Double(priority - 1) / 4.0
-//        
-//        if hoursLeft <= 24 {
-//            return priorityBoost > 0.5 ? .red : .orange
-//        } else if hoursLeft <= 72 {
-//            return priorityBoost > 0.5 ? .orange : .yellow
-//        } else if hoursLeft <= 168 {
-//            return priorityBoost > 0.5 ? .yellow : .green
-//        } else {
-//            return priorityBoost > 0.5 ? .green : .blue
-//        }
-//    }
     
     func urgencyColor(at date: Date) -> Color {
         guard displayState(at: date) == .active else {
@@ -161,7 +96,7 @@ class TaskItem {
          notBefore: Date? = nil,
          dueDate: Date? = nil,
          isCompleted: Bool = false,
-         isDeleted: Bool = false,
+         isArchived: Bool = false,
          dateCompleted: Date? = nil
     )
     {
@@ -172,7 +107,7 @@ class TaskItem {
         self.notBefore = notBefore
         self.dueDate = dueDate
         self.isCompleted = isCompleted
-        self.isDeleted = isDeleted
+        self.isArchived = isArchived
         self.dateCompleted = dateCompleted
     }
 }

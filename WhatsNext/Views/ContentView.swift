@@ -52,10 +52,10 @@ struct ContentView: View {
             }
     }
 
-    var deletedTasks: [TaskItem] {
+    var archivedTasks: [TaskItem] {
         let now = refreshDate
         
-        return tasks.filter { $0.displayState(at: now) == .deleted }
+        return tasks.filter { $0.displayState(at: now) == .archived }
     }
 
     @State private var newTaskTitle = ""
@@ -95,7 +95,9 @@ struct ContentView: View {
                             TaskRowView(
                                 task: task,
                                 completeTask: completeTask,
-                                removeTask: removeTask,
+                                archiveTask: archiveTask,
+                                restoreTask: restoreTask,
+                                deleteTask: deleteTask,
                                 currentDate: refreshDate
                             )
                         }
@@ -106,7 +108,9 @@ struct ContentView: View {
                             TaskRowView(
                                 task: task,
                                 completeTask: completeTask,
-                                removeTask: removeTask,
+                                archiveTask: archiveTask,
+                                restoreTask: restoreTask,
+                                deleteTask: deleteTask,
                                 currentDate: refreshDate
                             )
                         }
@@ -117,16 +121,31 @@ struct ContentView: View {
                             TaskRowView(
                                 task: task,
                                 completeTask: completeTask,
-                                removeTask: removeTask,
+                                archiveTask: archiveTask,
+                                restoreTask: restoreTask,
+                                deleteTask: deleteTask,
+                                currentDate: refreshDate
+                            )
+                        }
+                    }
+                    
+                    Section("Archived") {
+                        ForEach(archivedTasks) { task in
+                            TaskRowView(
+                                task: task,
+                                completeTask: completeTask,
+                                archiveTask: archiveTask,
+                                restoreTask: restoreTask,
+                                deleteTask: deleteTask,
                                 currentDate: refreshDate
                             )
                         }
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    isAddingTaskFocused = false
-                }
+//                .contentShape(Rectangle())
+//                .onTapGesture {
+//                    isAddingTaskFocused = false
+//                }
             }
             .navigationTitle("WhatsNext")
         }.onChange(of: scenePhase) { _, newPhase in
@@ -156,8 +175,20 @@ struct ContentView: View {
         task.dateCompleted = .now
     }
     
-    private func removeTask(_ task: TaskItem) {
-        task.isDeleted = true
+    private func archiveTask(_ task: TaskItem) {
+            withAnimation {
+                task.isArchived = true
+            }
+    }
+    
+    private func restoreTask(_ task: TaskItem) {
+            withAnimation {
+                task.isArchived = false
+            }
+    }
+    
+    private func deleteTask(_ task: TaskItem) {
+            modelContext.delete(task)
     }
 }
 
